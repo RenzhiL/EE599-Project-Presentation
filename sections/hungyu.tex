@@ -7,10 +7,11 @@
 
 
 \begin{frame}{DQN, NSGA-II and MAP-Elites: method}
+  \textbf{Hungyu Lin, Group 7}
   \begin{itemize}
-    \item \todo{what the method is, in one line}
-    \item \todo{what it sees (observation), what it picks (action), what it is rewarded for}
-    \item \todo{what is specific to your version}
+    \item With 50 to 600 simulations, how well can we map the circuit designs that meet a given spec?
+    \item I trained a Double DQN to score candidate designs using the map's predictions and uncertainty. It selects one design per step. During training, a drop in prediction error near the pass/fail boundary earns a positive reward.
+    \item I implemented and evaluated two comparison methods. NSGA-II searches for trade-offs across specs. MAP-Elites groups designs by spec margins and keeps the design with the largest minimum margin in each bin.
   \end{itemize}
 \end{frame}
 
@@ -18,13 +19,27 @@
   \begin{columns}[T]
     \begin{column}{0.5\textwidth}
       \begin{itemize}
-        \item \todo{tasks, budgets, seeds}
-        \item \todo{steps / wall time}
+        \item I tried six settings with training seed 0 and 250,000 steps per run.
+        \item In a 6,200-step pilot sample, about half the rewards had magnitude below $10^{-4}$. I scaled the reward inside DQN.
+        \item I kept the $1{,}000\times$ scale and $\gamma=0.9$, then trained three models for one million steps each with different seeds.
       \end{itemize}
     \end{column}
     \begin{column}{0.5\textwidth}
       \centering
-      \placeholder[\linewidth]{training curve\\ (figures/hungyu/...)}
+      \small
+      \textbf{Validation prediction error}\\
+      Difference from the \rulename\\[0.6em]
+      \begin{tabular}{@{}lr@{}}
+        \toprule
+        DQN setting & Difference \\
+        \midrule
+        Default & $+0.265$ \\
+        Reward $\times 1{,}000$ & $+0.018$ \\
+        Same scale, $\gamma=0.9$ & $+0.002$ \\
+        \bottomrule
+      \end{tabular}\\[0.4em]
+      Three of six settings shown.\\
+      Lower error is better.
     \end{column}
   \end{columns}
 \end{frame}
@@ -33,19 +48,24 @@
   \centering
   \begin{tabular}{lcc}
     \toprule
-    method & \passfail{} (vs \rulename) & \prederr{} (vs \rulename) \\
+    Method & Pass/fail (edge-tolerant IoU) $\uparrow$ & \prederr{} $\downarrow$ \\
     \midrule
-    \todo{your model} & $+0.000$ & $+0.000$ \\
+    Uncertainty rule (reference) & $0$ & $0$ \\
+    DQN (three seeds pooled) & $-0.040$ & $+0.013$ \\
+    NSGA-II & $-0.217$ & $+0.134$ \\
+    MAP-Elites & $-0.324$ & $+0.164$ \\
     \bottomrule
   \end{tabular}
 
   \vspace{1em}
-  \todo{one sentence: what the numbers say}
+  Each entry is the method's score minus the rule's, averaged over 19 achievable validation tasks and five simulation budgets.\\
+  DQN beat both evolutionary methods on both measures. The reference rule picks the design whose estimated chance of passing is closest to 50\%.
 \end{frame}
 
 \begin{frame}{DQN, NSGA-II and MAP-Elites: takeaways}
   \begin{itemize}
-    \item \todo{what worked}
-    \item \todo{what did not, and why}
+    \item Reward scaling alone closed most of the tuning run's prediction-error gap. On stored validation data, all three final DQN models still had higher error than the rule (by $0.002$ to $0.030$).
+    \item On six achievable specs for one 15-knob circuit, fresh SPICE runs put DQN's prediction error $0.009$ above the rule's and its pass/fail score $0.042$ below.
+    \item I tested both evolutionary methods on SKY130 and GF180. On both processes, their average prediction error exceeded the rule's across the scored tasks. DQN testing is scheduled for Nov.\ 30--Dec.\ 3, after the Nov.\ 29 freeze.
   \end{itemize}
 \end{frame}
