@@ -11,7 +11,7 @@
 
 \title{Learning to Map Feasible Design Spaces of Amplifier Topologies}
 \subtitle{EE 599 final project}
-\author{Hungyu Lin \and Renzhi Li \and Taman Truong \and Samir Sarieddine}
+\author{Hungyu Lin \and Renzhi Li \and Taman Truong \and Samir Sarieddine \and Zhaoyan Jia}
 \institute{University of Southern California}
 \date{December 2026}
 
@@ -23,13 +23,42 @@
   \tableofcontents[hideallsubsections]
 \end{frame}
 
-% The sections, in presentation order: \deckpart{file}{section title}{presenter} makes the section, its cover slide,
-% and includes the owner's file. Renaming a section or reordering the talk happens here only.
-\deckpart{sections/intro}{Problem and setup}{Renzhi Li}
+% The sections, in presentation order, 4 minutes each: \deckpart{file}{section title}{presenter} makes the section,
+% its cover slide, and includes the owner's file. Renaming a section or reordering the talk happens here only.
+\deckpart{sections/intro}{The problem, the setup and related work}{Renzhi Li}
 \deckpart{sections/taman}{Evolution strategies}{Taman Truong}
 \deckpart{sections/samir}{PPO}{Samir Sarieddine}
 \deckpart{sections/hungyu}{DQN, NSGA-II and MAP-Elites}{Hungyu Lin}
-\deckpart{sections/renzhi}{Comparison and the LLM designer}{Renzhi Li}
+\deckpart{sections/zhaoyan}{Post-training a small model}{Zhaoyan Jia}
 \deckpart{sections/conclusion}{Conclusions}{Renzhi Li}
+
+% Closing slides: the whole deck only (left out of solo builds). Not in the contents.
+\ifdefined\onlypart\else
+\begin{frame}{Contributions}
+  \small
+  \renewcommand{\arraystretch}{1.35}
+  \begin{tabular}{@{}p{0.2\textwidth}p{0.76\textwidth}@{}}
+    \toprule
+    \textbf{Hungyu Lin} & DQN (tuning, training, validation, test); NSGA-II and MAP-Elites baselines; evaluation metrics \\
+    \textbf{Renzhi Li} & Benchmark; shared environment, evaluation harness, references; transfer, GF180 and robustness;
+      map summary and the LLM designer loop; integration and report \\
+    \textbf{Taman Truong} & Evolution strategy (training, validation, test) and its input ablation; PPO with annealed
+      candidates \\
+    \textbf{Samir Sarieddine} & PPO (tuning, training, validation, test); discount-0 ablation; Milestone 1 PPO on the
+      mapping tasks; GP straddle baseline \\
+    \textbf{Zhaoyan Jia} & Post-training Qwen3-8B to choose catalogue circuits: replayed-session data, LoRA SFT, GRPO,
+      evaluation; the published adapter \\
+    \bottomrule
+  \end{tabular}
+\end{frame}
+
+\begin{frame}[standout]
+  Questions?
+\end{frame}
+\fi
+
+% Backup slides: after the closing slides, not in the contents, not counted in the frame total.
+\appendix
+\backuppart{sections/renzhi}{Backup: results, the LLM designer, limitations}
 
 \end{document}

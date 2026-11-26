@@ -1,4 +1,6 @@
-%% sections/renzhi.tex: Renzhi's slides (comparison across methods; the LLM designer loop). OWNER: Renzhi. Only Renzhi edits this file.
+%% sections/renzhi.tex: Renzhi's BACKUP slides (results across methods, the LLM designer loop, limitations), shown
+%% after the closing slides (main.tex, \backuppart). OWNER: Renzhi. Only Renzhi edits this file. His 4-minute part
+%% is sections/intro.tex.
 %% - Figures go in figures/renzhi/ and are included as \includegraphics[width=...]{renzhi/<file>}.
 %% - Need a macro of your own? Define it here with a renzhi prefix (\newcommand{\renzhiFoo}{...}), never in preamble.tex.
 %% - Build just your part: latexmk -pdf solo_renzhi.tex   (or compile solo_renzhi.tex in Overleaf).
@@ -330,4 +332,29 @@
       third more simulations than Sonnet.
     \item \textbf{Caveat:} 3 achievable specs, each met by one menu entry: a demonstration, not a general result.
   \end{itemize}
+\end{frame}
+
+\begin{frame}{Limitations and next steps}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \textbf{Limitations}
+      \small
+      \begin{itemize}
+        \item Maps are scored at the typical corner.
+        \item Explorers choose among stored pool designs (live only on one circuit).
+        \item Below about 1\% passing, every method's map stays poor.
+        \item The LLM result rests on 3 achievable specs.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \textbf{Next steps}
+      \small
+      \begin{itemize}
+        \item A robust map: one check per corner.
+        \item A reward that matches \passfail{}, e.g.\ one that penalises predicting too wide a region.
+        \item The designer with and without the map summary.
+        \item A small model trained on the loop's circuit changes.
+      \end{itemize}
+    \end{column}
+  \end{columns}
 \end{frame}

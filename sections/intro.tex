@@ -1,66 +1,53 @@
-%% sections/intro.tex: the opening (problem, benchmark, environment, measures). OWNER: Renzhi. Only Renzhi edits this file.
-%% Figures in figures/shared/. Numbers: doc/final/final.tex and rl/PLAN.md (EE599-Project, 2026-11-26).
+%% sections/intro.tex: Renzhi's 4-minute part: the problem, the setup every learner trains in, related work.
+%% OWNER: Renzhi. Only Renzhi edits this file. Five slides, under a minute each.
+%% Numbers: doc/final/final.tex and rl/PLAN.md (EE599-Project, 2026-11-26). Longer material: sections/renzhi.tex (backup).
 
 \tikzset{
   introBox/.style={draw=usccardinal, fill=usccardinal!6, rounded corners=2pt, thick, align=center,
-                   font=\footnotesize, text width=26mm, minimum height=11mm, inner sep=2pt},
+                   font=\footnotesize, text width=25mm, minimum height=11mm, inner sep=2pt},
   introSim/.style={introBox, draw=uscgray, fill=uscgray!8},
   introArr/.style={-{Stealth[length=2mm]}, thick, uscgray},
 }
 
-\begin{frame}{Sizing an amplifier}
-  \begin{columns}[c]
-    \begin{column}{0.55\textwidth}
+% 1 -----------------------------------------------------------------------------------------------------------------
+\begin{frame}{The problem: map the region, not one design}
+  \begin{columns}[T]
+    \begin{column}{0.5\textwidth}
+      \small
+      \textbf{Sizing an amplifier}
       \begin{itemize}
-        \item A \alert{spec} (gain, bandwidth, power, load) becomes a circuit in two steps:
-          \begin{itemize}
-            \item pick a \alert{topology}, the arrangement of devices;
-            \item \alert{size} it: device dimensions, bias and supply.
-          \end{itemize}
-        \item Every sizing is checked by one SPICE simulation.
-        \item For demanding specs few pass: 0.5--3\% of the design space in our tasks, with every transistor in its
-          required operating region.
+        \item A spec (gain, bandwidth, power, load) needs a \alert{topology}, then a \alert{sizing}: device
+          dimensions, bias, supply.
+        \item Each sizing costs one SPICE simulation, and few pass: 0.5--3\% of the space in our tasks.
+        \item Exhaustive maps do not scale: 5 knobs at 7 levels is 16,807 simulations; 8 knobs, 5.8 million.
       \end{itemize}
     \end{column}
-    \begin{column}{0.42\textwidth}
-      \centering
-      \begin{tikzpicture}
-        \node[introBox] (s) at (0,0)      {\textbf{Spec}};
-        \node[introBox] (t) at (0,-15mm)  {\textbf{Topology}};
-        \node[introBox] (z) at (0,-30mm)  {\textbf{Sizing}};
-        \node[introSim] (v) at (0,-45mm)  {\textbf{SPICE}\\ pass / fail};
-        \draw[introArr] (s) -- (t); \draw[introArr] (t) -- (z); \draw[introArr] (z) -- (v);
-        \draw[introArr, usccardinal] (v.east) -- ++(6mm,0) |- node[right, pos=0.25, font=\scriptsize] {try again}
-          (z.east);
-      \end{tikzpicture}
+    \begin{column}{0.47\textwidth}
+      \small
+      \textbf{Why the feasible region}, every sizing that passes:
+      \begin{itemize}
+        \item \textbf{how safely} a spec is met (inside, not on the edge);
+        \item \textbf{when to stop}: no sizing of this topology works;
+        \item \textbf{what to change}: which target limits it;
+        \item \textbf{what carries over} when the spec is revised.
+      \end{itemize}
+      \vspace{1mm}
+      \begin{block}{Goal}
+        An accurate map from a few hundred simulations.
+      \end{block}
     \end{column}
   \end{columns}
 \end{frame}
 
-\begin{frame}{One design, or the region}
-  Optimizers and RL sizing agents return \alert{one} design per spec. The \alert{feasible region}, every sizing that
-  meets the spec, tells a designer more:
-  \begin{itemize}
-    \item \textbf{how safely} it is met: deep inside the region, not on its edge;
-    \item \textbf{when to stop}: evidence that no sizing of this topology meets it;
-    \item \textbf{what to change}: which target limits the region;
-    \item \textbf{what carries over} when the spec is revised.
-  \end{itemize}
-  \vspace{2mm}
-  \begin{block}{Exhaustive maps do not scale}
-    5 knobs at 7 levels: 16,807 simulations for one circuit at one load; 8 knobs: 5.8 million.
-    A map has to come from a few hundred simulations.
-  \end{block}
-\end{frame}
-
+% 2 -----------------------------------------------------------------------------------------------------------------
 \begin{frame}{Our approach: learn where to simulate next}
   \centering
   \begin{tikzpicture}
-    \node[introBox] (b)  at (0,0)      {\textbf{Belief}\\ one GP per check};
-    \node[introBox] (c)  at (36mm,0)   {\textbf{Candidates}\\ 32 per knob};
-    \node[introBox] (p)  at (72mm,0)   {\textbf{Policy}\\ scores each candidate};
-    \node[introSim] (s)  at (72mm,-20mm) {\textbf{Simulate}\\ the chosen design};
-    \node[introBox] (m)  at (0,-20mm)  {\textbf{Map}\\ $p(x)$ = chance $x$ meets};
+    \node[introBox] (b)  at (0,0)        {\textbf{Belief}\\ one GP per check};
+    \node[introBox] (c)  at (36mm,0)     {\textbf{Candidates}\\ 32 per knob};
+    \node[introBox] (p)  at (72mm,0)     {\textbf{Policy}\\ scores each one};
+    \node[introSim] (s)  at (72mm,-19mm) {\textbf{Simulate}\\ the chosen design};
+    \node[introBox] (m)  at (0,-19mm)    {\textbf{Map}\\ $p(x)$: chance $x$ passes};
     \draw[introArr] (b) -- (c); \draw[introArr] (c) -- (p); \draw[introArr] (p) -- (s);
     \draw[introArr] (s) -- node[below, font=\scriptsize] {update} (m);
     \draw[introArr] (m) -- (b);
@@ -68,32 +55,34 @@
 
   \vspace{3mm}
   \begin{itemize}\small
-    \item A \alert{learned acquisition function}: an RL policy, trained once across many circuits, picks the next
-      design so that the map gets accurate fast.
-    \item \textbf{From Milestone 1:} finding \emph{one} passing design was close to saturated (greedy needed
-      0.3--0.5$\times$ the simulations of the best baseline). So the final project scores \alert{mapping}.
+    \item A \alert{learned acquisition function}: one RL policy, trained across many circuits, picks the next design to
+      simulate so that the map gets accurate fast.
+    \item The learners train in the \alert{same} environment: ES (Taman), PPO (Samir), DQN (Hungyu); Zhaoyan
+      post-trains a small LLM that chooses circuits.
+    \item Milestone 1 scored \emph{finding} one passing design, which was close to saturated; the final project
+      scores \alert{mapping}.
   \end{itemize}
 \end{frame}
 
+% 3 -----------------------------------------------------------------------------------------------------------------
 \begin{frame}{The benchmark}
   \begin{columns}[T]
-    \begin{column}{0.52\textwidth}
+    \begin{column}{0.5\textwidth}
       \small
       \begin{itemize}
-        \item SkyWater 130\,nm, ngspice 41 (pinned); GF\,180 for transfer.
-        \item 22 catalogue amplifier circuits, plus 2 drawn by our LLM designer.
-        \item Each circuit: a pool of 4,096--16,384 sizings, \alert{every one simulated}, split in two halves:
+        \item SkyWater 130\,nm with ngspice 41, pinned; GF\,180 for transfer.
+        \item 24 amplifier circuits. Each has a pool of 4,096--16,384 sizings, \alert{every one simulated}:
           \begin{itemize}
-            \item explorers choose from the \emph{candidate} half;
+            \item explorers pick from the \emph{candidate} half;
             \item maps are scored on the \emph{scoring} half.
           \end{itemize}
-        \item Specs at the hard end: medium, thin and impossible.
-        \item A \alert{knob ladder}: one amplifier at 8, 15, 22 and 29 knobs.
+        \item Hard specs only: medium, thin, impossible.
+        \item A \alert{knob ladder}: one amplifier at 8, 15, 22, 29 knobs.
       \end{itemize}
     \end{column}
-    \begin{column}{0.45\textwidth}
+    \begin{column}{0.47\textwidth}
       \centering\small
-      \begin{tabular}{@{}p{0.7\linewidth}r@{}}
+      \begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.74\linewidth}r@{}}
         \toprule
         Task set \texttt{map1} & Tasks \\
         \midrule
@@ -106,59 +95,69 @@
       \end{tabular}
 
       \vspace{2mm}
-      \footnotesize Replaying stored pools: no comparison costs a new simulation.
+      \footnotesize Training replays stored pools; validation is also run live, every pick simulated.
     \end{column}
   \end{columns}
 \end{frame}
 
-\begin{frame}{One environment for every explorer}
-  \begin{itemize}
-    \item \textbf{Episode:} one task (circuit, spec, load) and a budget of 50--600 simulations; 2 starting designs per
-      knob.
-    \item \textbf{Each step:} 32 candidates per knob from the candidate half; the explorer picks one to simulate.
-    \item \textbf{Belief:} one Gaussian process per spec target and per device region check; $p(x)$ is the chance
-      every check passes.
-    \item \textbf{One small network} (at most 20k parameters) scores every candidate from shared features, so one policy
-      runs on any circuit, knob count, spec and load.
-    \item \textbf{Reward \texttt{margin}:} the drop in the map's prediction error over 1,024 reference designs,
-      weighted toward the end of the run.
-    \item \textbf{Train on stored results; validate also live:} on the 15-knob circuit every pick is a fresh, simulated
-      design.
-  \end{itemize}
-\end{frame}
-
-\begin{frame}{Measures and the bar}
+% 4 -----------------------------------------------------------------------------------------------------------------
+\begin{frame}{One environment for every learner}
   \begin{columns}[T]
-    \begin{column}{0.52\textwidth}
+    \begin{column}{0.53\textwidth}
       \small
       \begin{itemize}
-        \item \textbf{One shared map estimator}, refit on each method's designs: the map depends only on
-          \emph{which} designs it chose.
-        \item \textbf{\prederr{}}, lower is better: the headline and the choice.
-        \item \textbf{\passfail{}}, higher is better: the guard (designs within 0.5\,dB of a gain target count
-          neither way).
-        \item \textbf{Selection:} lowest \prederr{} on validation, if the \passfail{} interval against the bar
-          reaches 0.
-        \item \textbf{The bar:} the \rulename{}, picking the highest $p(1-p)$.
+        \item \textbf{Episode:} one task (circuit, spec, load), 50--600 simulations.
+        \item \textbf{Action:} pick 1 of 32 candidates per knob.
+        \item \textbf{Observation:} the belief at each candidate: chance, margins, uncertainty, distances, budget left.
+        \item \textbf{Policy:} one small network scores every candidate, so the same weights run on any circuit.
+        \item \textbf{Reward:} the drop in the map's \prederr{} over 1,024 reference designs.
+        \item \textbf{Same for all:} tasks, budgets, seeds; $10^6$ steps $\times$ 3 seeds.
       \end{itemize}
     \end{column}
-    \begin{column}{0.45\textwidth}
-      \centering\small
-      The bar on validation (19 tasks, 2 seeds)
-
+    \begin{column}{0.44\textwidth}
+      \small
+      \textbf{Measures}, one shared map estimator for every method:
+      \begin{itemize}
+        \item \prederr{} (lower is better): the headline;
+        \item \passfail{} (higher is better): the guard.
+      \end{itemize}
       \vspace{1mm}
-      \begin{tabular}{@{}lccc@{}}
+      \textbf{The bar:} the \rulename{} (pick the highest $p(1-p)$). On validation, 600 simulations:
+      \vspace{1mm}
+
+      \centering
+      \begin{tabular}{@{}lc@{}}
         \toprule
-        simulations & 50 & 200 & 600 \\
-        \midrule
-        \prederr{} & 0.492 & 0.201 & 0.117 \\
-        \passfail{} & & & 0.674 \\
+        \prederr{} & 0.117 \\
+        \passfail{} & 0.674 \\
         \bottomrule
       \end{tabular}
-
-      \vspace{2mm}
-      \footnotesize Greedy (highest $p$) is within 0.01 of the rule; random pick trails it by 0.35--0.37 on
-      \passfail{}.
     \end{column}
   \end{columns}
+\end{frame}
+
+% 5 -----------------------------------------------------------------------------------------------------------------
+\begin{frame}{What other work does, and what we add}
+  \centering\scriptsize\setlength{\tabcolsep}{4pt}\renewcommand{\arraystretch}{1.1}
+  \begin{tabular}{@{}L{0.29\textwidth}L{0.17\textwidth}L{0.25\textwidth}L{0.23\textwidth}@{}}
+    \toprule
+    Work & Returns & What is learned & Across circuits \\
+    \midrule
+    \textbf{RL sizing:} AutoCkt, PPAAS, GCN-RL & one design per spec & a policy that moves the sizes & per topology
+      (GCN-RL: across nodes) \\
+    \textbf{Pass/fail classifiers:} SVM, Bayesian NN & the boundary & a classifier, per circuit & no \\
+    \textbf{Level-set rules:} straddle, LSE & the region & nothing: a fixed rule & -- \\
+    \textbf{MetaBO} & the optimum & an acquisition function across tasks & yes, not circuits \\
+    \textbf{LLM designers:} AnalogCoder, ADO-LLM, EEsizer & a circuit or a sizing & prompting, in-context & -- \\
+    \midrule
+    \alert{\textbf{Ours}} & \alert{the feasible region} & \alert{an acquisition function for mapping} & \alert{any circuit,
+      knob count and spec; GF\,180 zero-shot} \\
+    \bottomrule
+  \end{tabular}
+
+  \vspace{1mm}
+  \begin{minipage}{\linewidth}\tiny\color{uscgray}\raggedright
+    AutoCkt (DATE'20), PPAAS (2025), GCN-RL (DAC'20); SVM (DAC'03, TCAD'15), Bayesian NN (ISCAS'22); straddle
+    (NeurIPS'05), LSE (IJCAI'13); MetaBO (ICLR'20); AnalogCoder (AAAI'25), ADO-LLM (ICCAD'24), EEsizer (TCAS-I'25).
+  \end{minipage}
 \end{frame}

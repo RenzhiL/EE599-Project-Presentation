@@ -14,6 +14,7 @@ rebuilds it on every push to `main`.
 | `sections/samir.tex` | Samir | PPO |
 | `sections/hungyu.tex` | Hungyu | DQN, NSGA-II, MAP-Elites |
 | `sections/renzhi.tex` | Renzhi | comparison across methods; the LLM designer loop |
+| `sections/zhaoyan.tex` | Zhaoyan | post-training a small model (Qwen3-8B) |
 | `figures/<name>/` | each owner | your figures |
 
 **Edit only your own section file and your own figures folder.** Since nobody else touches them, your changes never
