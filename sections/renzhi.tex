@@ -49,3 +49,109 @@
     \item \todo{what did not, and why}
   \end{itemize}
 \end{frame}
+
+%% ------------------------------------------------------------------------------------------------------------------
+%% The LLM designer (SKY130 only; stand-in compiler). Numbers from the menu enumeration and the model runs of
+%% 2026-11-24/25 (llm/PLAN.md log; sandbox/llm_enum/STATUS.md, sandbox/llm_longer/STATUS.md).
+\tikzset{
+  renzhiBox/.style={draw=usccardinal, fill=usccardinal!6, rounded corners=2pt, thick, align=center,
+                    font=\footnotesize, text width=27mm, minimum height=12mm, inner sep=2pt},
+  renzhiSim/.style={renzhiBox, draw=uscgray, fill=uscgray!8},
+  renzhiArr/.style={-{Stealth[length=2mm]}, thick, uscgray},
+}
+
+\begin{frame}{The LLM designer: the loop}
+  \centering
+  \begin{tikzpicture}
+    \node[renzhiBox] (spec) at (0,0)        {\textbf{Spec}\\ gain, bandwidth, load};
+    \node[renzhiBox] (pick) at (36mm,0)     {\textbf{Designer (LLM)}\\ picks 3 menu entries};
+    \node[renzhiSim] (comp) at (72mm,0)     {\textbf{Compile}\\ the circuit change};
+    \node[renzhiSim] (scr)  at (108mm,0)    {\textbf{Quick screen}\\ random sizings};
+    \node[renzhiSim] (srch) at (108mm,-24mm) {\textbf{Mapping search}\\ 200 designs, \rulename};
+    \node[renzhiSim] (pm)   at (72mm,-24mm)  {\textbf{Phase margin}\\ $\geq 45^\circ$ if compensated};
+    \node[renzhiBox] (rep)  at (36mm,-24mm)  {\textbf{Round report}\\ with the map summary};
+    \node[renzhiBox] (call) at (0,-24mm)     {\textbf{Call}\\ accept / replan / reject};
+    \draw[renzhiArr] (spec) -- (pick);
+    \draw[renzhiArr] (pick) -- (comp);
+    \draw[renzhiArr] (comp) -- (scr);
+    \draw[renzhiArr] (scr) -- (srch);
+    \draw[renzhiArr] (srch) -- (pm);
+    \draw[renzhiArr] (pm) -- (rep);
+    \draw[renzhiArr] (rep) -- (call);
+    \draw[renzhiArr, usccardinal] (call.north east) -- node[right, font=\scriptsize, text=usccardinal, pos=0.4] {replan}
+      (pick.south west);
+  \end{tikzpicture}
+
+  \vspace{4mm}
+  \begin{minipage}{0.9\linewidth}\footnotesize
+    \textbf{Menu:} every catalogue circuit the designer may see, as it is or one change away: a degeneration
+    resistor, a cascode, or a second gain stage. Up to 3 rounds; it may reject a spec only after 3 rounds in which
+    nothing met it.
+  \end{minipage}
+\end{frame}
+
+\begin{frame}{The LLM designer: 4 specs beyond the catalogue}
+  \centering\small\setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}lcccc@{}}
+    \toprule
+    Spec & Meet & Random & Sonnet (2 draws) & Qwen 14B \\
+    \midrule
+    \texttt{miller2 cl30.01}      & 1 of 28 & 0.33 & accept, 2,152 (both) & accept, 2,936 \\
+    \texttt{miller2 cl1000.01}    & 1 of 28 & 0.32 & accept, 1,936 (both) & accept, 2,184 \\
+    \texttt{miller2 cl1000.02}    & 0 of 28 & 0    & reject, 2,872/2,576 & reject, 3,064 \\
+    \texttt{ota\_sym\_casc cl30.03} & 3 of 33 & 0.62 & accept, 1,672 (both) & accept, 2,624 \\
+    \bottomrule
+  \end{tabular}
+
+  \vspace{3mm}
+  \begin{minipage}{0.92\linewidth}\footnotesize
+    \begin{itemize}
+      \item No catalogue circuit, as it is, meets any of the four (14 circuits hidden from the designer).
+      \item Meet: menu entries with a design that meets the spec. Random: a random designer's chance of meeting it
+        within 3 rounds. Models: the call and the simulations used.
+      \item The entry that meets: a five-transistor OTA with a second stage, with 45$^\circ$ phase margin or more.
+      \item Qwen 7B met none of the four. SKY130, stand-in compiler.
+    \end{itemize}
+  \end{minipage}
+\end{frame}
+
+\begin{frame}{The LLM designer against a random designer}
+  \centering
+  \begin{tikzpicture}[x=1mm, y=32mm]
+    \foreach \y in {0, 0.5, 1} {
+      \draw[uscgray!30] (0,\y) -- (124,\y);
+      \node[left, font=\scriptsize, text=uscgray] at (0,\y) {\y};
+    }
+    \node[rotate=90, font=\scriptsize, text=uscgray] at (-9,0.5) {chance of meeting in 3 rounds};
+    \foreach \x/\r/\s/\lab in {6/0.33/1/{miller2\\cl30.01}, 37/0.32/1/{miller2\\cl1000.01},
+                               68/0/0/{miller2\\cl1000.02}, 99/0.62/1/{ota\_sym\_casc\\cl30.03}} {
+      \fill[uscgray!55] (\x,0) rectangle ++(8,\r);
+      \fill[usccardinal] (\x+9,0) rectangle ++(8,\s);
+      \node[above, font=\scriptsize] at (\x+4,\r) {\r};
+      \node[below, font=\scriptsize, align=center] at (\x+8.5,0) {\lab};
+    }
+    \foreach \x in {6, 37, 99} { \node[above, font=\scriptsize, text=usccardinal] at (\x+13,1) {2 of 2}; }
+    \node[font=\scriptsize, align=center, text=uscgray] at (76.5,0.3) {no entry\\meets: the\\reject is right};
+    \draw[uscgray] (0,0) -- (124,0);
+    \fill[uscgray!55] (2,1.2) rectangle ++(4,0.08);  \node[right, font=\scriptsize] at (7,1.24) {random designer};
+    \fill[usccardinal] (40,1.2) rectangle ++(4,0.08); \node[right, font=\scriptsize] at (45,1.24) {Sonnet (met in 2 of 2 draws)};
+  \end{tikzpicture}
+
+  \vspace{2mm}
+  \begin{minipage}{0.92\linewidth}\footnotesize
+    Random designer: 3 untried menu entries a round, 10,000 seeded orders; it meets all three about 7\% of the time.
+    When both meet, the simulations are about the same: Sonnet 1,672--2,152, random 1,884--2,190.
+  \end{minipage}
+\end{frame}
+
+\begin{frame}{The LLM designer: takeaways}
+  \begin{itemize}
+    \item \textbf{Choosing the change is the value.} Sonnet read ``gain too low'' after round 1, added a second stage,
+      and met all 3 achievable specs in both draws; a random designer meets all three about 7\% of the time.
+    \item \textbf{Not a cheaper search.} When both meet, the simulations are about the same; its rejects were right,
+      and 10$\times$ the search on the closest entry still met nothing.
+    \item \textbf{A 14B open model is enough to drive the loop:} 3 of 4, every reply valid (7B: 0 of 4), with about a
+      third more simulations than Sonnet.
+    \item \textbf{Caveat:} 3 achievable specs, each met by one menu entry: a demonstration, not a general result.
+  \end{itemize}
+\end{frame}
