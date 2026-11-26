@@ -131,7 +131,7 @@
       \node[below, font=\scriptsize, align=center] at (\x+8.5,0) {\lab};
     }
     \foreach \x in {6, 37, 99} { \node[above, font=\scriptsize, text=usccardinal] at (\x+13,1) {2 of 2}; }
-    \node[font=\scriptsize, align=center, text=uscgray] at (76.5,0.3) {no entry\\meets: the\\reject is right};
+    \node[font=\scriptsize, align=center, text=uscgray] at (76.5,0.3) {no entry\\meets it:\\not found};
     \draw[uscgray] (0,0) -- (124,0);
     \fill[uscgray!55] (2,1.2) rectangle ++(4,0.08);  \node[right, font=\scriptsize] at (7,1.24) {random designer};
     \fill[usccardinal] (40,1.2) rectangle ++(4,0.08); \node[right, font=\scriptsize] at (45,1.24) {Sonnet (met in 2 of 2 draws)};
@@ -148,8 +148,8 @@
   \begin{itemize}
     \item \textbf{Choosing the change is the value.} Sonnet read ``gain too low'' after round 1, added a second stage,
       and met all 3 achievable specs in both draws; a random designer meets all three about 7\% of the time.
-    \item \textbf{Not a cheaper search.} When both meet, the simulations are about the same; its rejects were right,
-      and 10$\times$ the search on the closest entry still met nothing.
+    \item \textbf{Not a cheaper search.} When both meet, the simulations are about the same. Its reject of the
+      fourth spec holds as ``not found'': 10$\times$ the search on the closest entry still met nothing.
     \item \textbf{A 14B open model is enough to drive the loop:} 3 of 4, every reply valid (7B: 0 of 4), with about a
       third more simulations than Sonnet.
     \item \textbf{Caveat:} 3 achievable specs, each met by one menu entry: a demonstration, not a general result.
