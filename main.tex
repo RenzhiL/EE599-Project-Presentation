@@ -11,7 +11,7 @@
 
 \title{Learning to Map Feasible Design Spaces of Amplifier Topologies}
 \subtitle{EE 599 final project}
-\author{Hungyu Lin \and Renzhi Li \and Taman Truong \and Samir Sarieddine}
+\author{Hungyu Lin \and Renzhi Li \and Taman Truong \and Samir Sarieddine \and Zhaoyan Jia}
 \institute{University of Southern California}
 \date{December 2026}
 
@@ -30,47 +30,27 @@
 \deckpart{sections/samir}{PPO}{Samir Sarieddine}
 \deckpart{sections/hungyu}{DQN, NSGA-II and MAP-Elites}{Hungyu Lin}
 \deckpart{sections/renzhi}{Comparison and the LLM designer}{Renzhi Li}
+\deckpart{sections/zhaoyan}{Post-training a small model}{Zhaoyan Jia}
 \deckpart{sections/conclusion}{Conclusions}{Renzhi Li}
 
 % Closing slides: the whole deck only (left out of solo builds). Not in the contents.
 \ifdefined\onlypart\else
 \begin{frame}{Contributions}
-  \footnotesize
-  \begin{columns}[T, onlytextwidth]
-    \begin{column}{0.48\textwidth}
-      \begin{block}{Hungyu Lin}
-        \begin{itemize}
-          \item DQN: tuning, training, validation, test
-          \item Baselines: NSGA-II, MAP-Elites
-          \item Evaluation metrics
-        \end{itemize}
-      \end{block}
-      \begin{block}{Renzhi Li}
-        \begin{itemize}
-          \item Benchmark: circuits, pools, task sets
-          \item Shared environment, evaluation harness, references
-          \item Transfer, GF180 and robustness studies
-          \item Map summary and the LLM designer loop; integration and report
-        \end{itemize}
-      \end{block}
-    \end{column}
-    \begin{column}{0.48\textwidth}
-      \begin{block}{Taman Truong}
-        \begin{itemize}
-          \item Evolution strategy: training, validation, test
-          \item Its input ablation (mean, spread and budget only)
-          \item PPO with annealed candidates
-        \end{itemize}
-      \end{block}
-      \begin{block}{Samir Sarieddine}
-        \begin{itemize}
-          \item PPO: tuning, training, validation, test
-          \item Discount-0 ablation; Milestone 1 PPO on the mapping tasks
-          \item Baseline: GP straddle
-        \end{itemize}
-      \end{block}
-    \end{column}
-  \end{columns}
+  \small
+  \renewcommand{\arraystretch}{1.35}
+  \begin{tabular}{@{}p{0.2\textwidth}p{0.76\textwidth}@{}}
+    \toprule
+    \textbf{Hungyu Lin} & DQN (tuning, training, validation, test); NSGA-II and MAP-Elites baselines; evaluation metrics \\
+    \textbf{Renzhi Li} & Benchmark; shared environment, evaluation harness, references; transfer, GF180 and robustness;
+      map summary and the LLM designer loop; integration and report \\
+    \textbf{Taman Truong} & Evolution strategy (training, validation, test) and its input ablation; PPO with annealed
+      candidates \\
+    \textbf{Samir Sarieddine} & PPO (tuning, training, validation, test); discount-0 ablation; Milestone 1 PPO on the
+      mapping tasks; GP straddle baseline \\
+    \textbf{Zhaoyan Jia} & Post-training Qwen3-8B to choose catalogue circuits: replayed-session data, LoRA SFT, GRPO,
+      evaluation; the published adapter \\
+    \bottomrule
+  \end{tabular}
 \end{frame}
 
 \begin{frame}[standout]
