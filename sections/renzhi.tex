@@ -6,48 +6,224 @@
 %% - The section's title and cover slide are set in main.tex; ask Renzhi to rename it.
 
 
-\begin{frame}{Comparison and the LLM designer: method}
-  \begin{itemize}
-    \item \todo{what the method is, in one line}
-    \item \todo{what it sees (observation), what it picks (action), what it is rewarded for}
-    \item \todo{what is specific to your version}
-  \end{itemize}
-\end{frame}
+%% Numbers: rl/PLAN.md (references v4, test references, the ladder, live validation, robustness R1-R3), the headroom
+%% check (rl/PLAN.md on branch rl/es-fitness, 2026-11-25) and doc/final/final.tex. SKY130 unless marked GF180.
 
-\begin{frame}{Comparison and the LLM designer: training setup}
-  \begin{columns}[T]
-    \begin{column}{0.5\textwidth}
-      \begin{itemize}
-        \item \todo{tasks, budgets, seeds}
-        \item \todo{steps / wall time}
-      \end{itemize}
-    \end{column}
-    \begin{column}{0.5\textwidth}
+\begin{frame}{Mapping gets hard fast: the knob ladder}
+  \begin{columns}[c]
+    \begin{column}{0.55\textwidth}
       \centering
-      \placeholder[\linewidth]{training curve\\ (figures/renzhi/...)}
+      \begin{tikzpicture}[x=1mm, y=38mm]
+        \foreach \y in {0, 0.5, 1} {
+          \draw[uscgray!30] (0,\y) -- (62,\y);
+          \node[left, font=\scriptsize, text=uscgray] at (0,\y) {\y};
+        }
+        \foreach \x/\v/\e/\k in {4/0.90/0.052/8, 19/0.60/0.113/15, 34/0.32/0.121/22, 49/0.15/0.176/29} {
+          \fill[usccardinal] (\x,0) rectangle ++(9,\v);
+          \node[above, font=\scriptsize] at (\x+4.5,\v) {\v};
+          \node[below, font=\scriptsize] at (\x+4.5,0) {\k};
+        }
+        \draw[uscgray] (0,0) -- (62,0);
+        \node[font=\scriptsize, text=uscgray] at (31,-0.16) {knobs};
+        \node[rotate=90, font=\scriptsize, text=uscgray] at (-9,0.5) {\passfail{}};
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.42\textwidth}
+      \small
+      \begin{itemize}
+        \item One amplifier, the same specs, 8 to 29 free knobs; the \rulename{}, 600 simulations.
+        \item \passfail{} falls from 0.90 to 0.15.
+        \item \prederr{} rises from 0.052 to 0.176.
+        \item The room for a better explorer is in the larger circuits.
+      \end{itemize}
     \end{column}
   \end{columns}
 \end{frame}
 
-\begin{frame}{Comparison and the LLM designer: results}
-  \centering
-  \begin{tabular}{lcc}
+\begin{frame}{The bar on the test sets}
+  \centering\small
+  The \rulename{}, 10 seeds; \prederr{} at 50 / 200 / 600 simulations, \passfail{} at 600
+
+  \vspace{2mm}
+  \begin{tabular}{@{}lcc@{}}
     \toprule
-    method & \passfail{} (vs \rulename) & \prederr{} (vs \rulename) \\
+    Test set & \prederr{} & \passfail{} \\
     \midrule
-    \todo{your model} & $+0.000$ & $+0.000$ \\
+    Familiar size, 7--8 knobs & 0.607 / 0.306 / 0.194 & 0.494 \\
+    Larger, 11--20 knobs & 0.429 / 0.309 / 0.237 & 0.251 \\
+    Ladder, 8 / 22 / 29 knobs & 0.347 / 0.172 / 0.116 & 0.454 \\
+    \midrule
+    GF\,180, 3 circuits (23 tasks) & 0.597 / 0.247 / 0.139 & 0.672 \\
     \bottomrule
   \end{tabular}
 
-  \vspace{1em}
-  \todo{one sentence: what the numbers say}
+  \vspace{3mm}
+  \begin{minipage}{0.85\linewidth}\footnotesize
+    \begin{itemize}
+      \item Greedy is within 0.01 of the rule everywhere: the two fixed rules tie on stored pools.
+      \item The map's chance that any design passes separates achievable from impossible specs perfectly.
+    \end{itemize}
+  \end{minipage}
 \end{frame}
 
-\begin{frame}{Comparison and the LLM designer: takeaways}
-  \begin{itemize}
-    \item \todo{what worked}
-    \item \todo{what did not, and why}
-  \end{itemize}
+\begin{frame}{Headline: every method against the \rulename{} (test)}
+  \centering\small
+  Difference from the rule, 95\% interval over tasks; \prederr{}: lower is better, \passfail{}: higher is better
+
+  \vspace{2mm}
+  \begin{tabular}{@{}lcc@{}}
+    \toprule
+    Method & \prederr{} & \passfail{} \\
+    \midrule
+    \multicolumn{3}{@{}l}{\textit{Learned}} \\
+    \quad ES (Taman) & \todo{test} & \todo{test} \\
+    \quad PPO; PPO, discount 0; Milestone 1 PPO (Samir) & \todo{test} & \todo{test} \\
+    \quad DQN (Hungyu) & \todo{test} & \todo{test} \\
+    \multicolumn{3}{@{}l}{\textit{Baselines}} \\
+    \quad GP straddle (Samir) & \todo{test} & \todo{test} \\
+    \quad NSGA-II, MAP-Elites (Hungyu) & \todo{test} & \todo{test} \\
+    \quad Greedy & within $\pm 0.01$ & within $\pm 0.01$ \\
+    \bottomrule
+  \end{tabular}
+
+  \vspace{2mm}
+  \footnotesize Test runs Nov 30 -- Dec 3 on the models frozen Nov 29.
+\end{frame}
+
+\begin{frame}{Stored pools against live simulation}
+  \begin{columns}[c]
+    \begin{column}{0.5\textwidth}
+      \centering\small
+      The \rulename{} on the 15-knob validation circuit, 600 simulations
+
+      \vspace{2mm}
+      \begin{tabular}{@{}lcc@{}}
+        \toprule
+        & stored & live \\
+        \midrule
+        \passfail{} at 600 & 0.732 & 0.818 \\
+        passing designs found & 1$\times$ & 3.2$\times$ \\
+        greedy $-$ rule, \passfail{} & $+0.003$ & $-0.031$ \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+    \begin{column}{0.47\textwidth}
+      \small
+      \begin{itemize}
+        \item Live, every pick is a fresh design, simulated: 28,800 simulations.
+        \item Stored candidates run out late in a run: the rule reaches 92\% of the pool's passing candidates by 600.
+        \item Live, greedy falls behind the rule, where the stored run shows a tie.
+        \item The map improves only moderately: the number of simulations, not the pool, mostly limits it.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{How much better could any picking rule do?}
+  \begin{columns}[T]
+    \begin{column}{0.5\textwidth}
+      \small
+      A \alert{one-step lookahead oracle} reads the true result of every offered candidate and picks the one that most
+      improves the map, at every step. 19 validation tasks, 2 seeds.
+
+      \vspace{2mm}
+      \centering
+      \begin{tabular}{@{}lcc@{}}
+        \toprule
+        Oracle $-$ rule & \passfail{} & \prederr{} \\
+        \midrule
+        improves margin & $-0.037$ & $\mathbf{-0.034}$ \\
+        improves IoU & $-0.047$ & $+0.011$ \\
+        \bottomrule
+      \end{tabular}
+
+      \vspace{1mm}
+      \footnotesize Whole run; both \passfail{} intervals exclude 0.
+    \end{column}
+    \begin{column}{0.47\textwidth}
+      \small
+      \begin{itemize}
+        \item Even with the truth, greedy improvement of the map \alert{loses to the rule} on \passfail{}.
+          \item They find as many passing designs (recall 0.70--0.79, rule 0.75) but mark more wrong (precision
+          0.78--0.83, rule 0.89).
+        \item A per-pick reward does not match \passfail{}: the rule's uncertain picks pay off over many picks, which
+          is why no reward or fitness change beat it.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Transfer}
+  \begin{columns}[T]
+    \begin{column}{0.5\textwidth}
+      \textbf{Spec to spec}
+      \small
+      \begin{itemize}
+        \item A revised spec on the same circuit starts from the designs already simulated for the old one.
+        \item The rule, 296 spec pairs: \prederr{} $-0.196$ [$-0.256$, $-0.150$], \passfail{} $+0.237$ [$+0.206$,
+          $+0.265$] against starting fresh.
+        \item Learned models: \todo{test}
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.47\textwidth}
+      \textbf{SKY130 to GF\,180}
+      \small
+      \begin{itemize}
+        \item 3 circuits, 23 tasks; the frozen SKY130 models run zero-shot.
+        \item The same circuits work far more often on GF\,180 (3.3\,V supply): 15--61\% of their pools against
+          4--49\%.
+        \item Results: \todo{test}
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Why a region: robustness}
+  \begin{columns}[c]
+    \begin{column}{0.52\textwidth}
+      \small
+      One thin spec per validation circuit; each nominally passing design re-simulated at 5 MOSFET corners
+      $\times$ 3 temperatures, resistor and capacitor corners, and 50 mismatch samples (15,387 simulations).
+      \begin{itemize}
+        \item Only \alert{0--16\%} of nominally passing designs pass at every corner and temperature.
+        \item Mismatch alone keeps 75--99\%.
+        \item Survival follows the \alert{nominal margin} (Spearman 0.59--0.73), not the distance to a failing design
+          in knob space.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.45\textwidth}
+      \begin{block}{What it means}
+        \small
+        A first passing design is usually not a robust one. A map with predicted margins says which designs are
+        worth keeping, which a single found design cannot.
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{The map for the designer}
+  \begin{columns}[T]
+    \begin{column}{0.5\textwidth}
+      \small
+      Each simulated circuit gets a short \alert{map summary} in the designer's round report:
+      \begin{itemize}
+        \item the estimated feasible share, with a range;
+        \item the chance that any design passes;
+        \item the target that limits the region;
+        \item the knob ranges that work, and the most interior design.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.47\textwidth}
+      \small
+      \textbf{Accurate from 200 simulations} (13 validation tasks $\times$ 3 seeds):
+      \begin{itemize}
+        \item feasible share: median ratio to the truth about 1 (1.5--1.8$\times$ at 50);
+        \item limiting target right on 82--92\% of tasks;
+        \item achievable and impossible specs separated perfectly;
+        \item working knob ranges overlap the true ones by about 0.75.
+      \end{itemize}
+    \end{column}
+  \end{columns}
 \end{frame}
 
 %% ------------------------------------------------------------------------------------------------------------------
