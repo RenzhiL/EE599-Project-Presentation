@@ -1,25 +1,280 @@
-%% sections/intro.tex: the opening (problem, environment, baselines). OWNER: Renzhi. Only Renzhi edits this file.
-%% Figures in figures/shared/.
+%% sections/intro.tex: Renzhi's 4-minute part: the problem, the setup every learner trains in, related work.
+%% OWNER: Renzhi. Only Renzhi edits this file. Seven slides in 4 minutes.
+%% Numbers: doc/final/final.tex and rl/PLAN.md (EE599-Project, 2026-11-26). Longer material: sections/renzhi.tex (backup).
 
+\tikzset{
+  introBox/.style={draw=usccardinal, fill=usccardinal!6, rounded corners=2pt, thick, align=center,
+                   font=\footnotesize, text width=25mm, minimum height=11mm, inner sep=2pt},
+  introSim/.style={introBox, draw=uscgray, fill=uscgray!8},
+  introArr/.style={-{Stealth[length=2mm]}, thick, uscgray},
+}
 
-\begin{frame}{Mapping feasible design spaces}
-  \begin{itemize}
-    \item Given a spec, find \alert{every sizing} of an amplifier topology that meets it, with as few simulations as possible
-    \item \todo{why it matters; what a ``map'' is}
+% 1 -----------------------------------------------------------------------------------------------------------------
+\begin{frame}{Automated circuit design, and our scope}
+  \centering
+  \begin{tikzpicture}
+    \node[introSim, text width=18mm] (spec) at (0,0)     {\textbf{Spec}\\ gain, bandwidth, power, load};
+    \node[introBox] (top)  at (32mm,0)    {\textbf{Propose}\\ a topology};
+    \node[introBox] (size) at (64mm,0)    {\textbf{Size}\\ the devices};
+    \node[introBox] (eval) at (96mm,0)    {\textbf{Evaluate}\\ in SPICE};
+    \draw[introArr] (spec) -- (top); \draw[introArr] (top) -- (size); \draw[introArr] (size) -- (eval);
+    \draw[introArr, usccardinal] (eval.south) -- ++(0,-6mm) -| node[below, pos=0.25, font=\scriptsize]
+      {revise the sizing} (size.south);
+    \draw[introArr, usccardinal] (eval.north) -- ++(0,6mm) -| node[above, pos=0.25, font=\scriptsize]
+      {or the topology} (top.north);
+    \draw[usccardinal, very thick, dashed, rounded corners=3pt]
+      ($(size.south west)+(-2.5mm,-12.5mm)$) rectangle ($(eval.north east)+(2.5mm,2.5mm)$);
+    \node[font=\scriptsize\bfseries, text=usccardinal, anchor=north] at ($(size.south)!0.5!(eval.south)+(0,-13.5mm)$)
+      {our focus: learn to map the feasible region};
+    \node[font=\scriptsize, text=uscgray, anchor=north] at ($(top.south)+(0,-13.5mm)$) {the LLM part};
+  \end{tikzpicture}
+
+  \vspace{4mm}
+  \begin{itemize}\small
+    \item A full workflow proposes a topology, sizes it, evaluates it, and revises; each step is open, and most of
+      the cost is in simulation.
+    \item \textbf{Scope: operational amplifiers} and the stages they are built from (single-stage OTAs, cascodes,
+      two-stage Miller). They are in almost every analog system, and their specs are standard and easy to check.
   \end{itemize}
 \end{frame}
 
+% 2 -----------------------------------------------------------------------------------------------------------------
+\begin{frame}{What a circuit looks like: a five-transistor OTA}
+  \begin{columns}[c]
+    \begin{column}{0.47\textwidth}
+      \centering
+      \textbf{\small Schematic}\par\smallskip
+      \begin{circuitikz}[scale=0.8, transform shape, font=\footnotesize]
+          \node[nmos] (M5) at (3,0) {};
+          \node[nmos] (M1) at (2,1.9) {};
+          \node[nmos, xscale=-1] (M2) at (4,1.9) {};
+          \node[pmos, xscale=-1] (M3) at (2,4) {};
+          \node[pmos] (M4) at (4,4) {};
+          % device labels (nodes) with parameters
+          \node[anchor=west, text=usccardinal] at ($(M1)+(0.15,0)$) {M1};
+          \node[anchor=east, text=usccardinal] at ($(M2)+(-0.15,0)$) {M2};
+          \node[anchor=east, text=usccardinal] at ($(M3)+(-0.55,0)$) {M3};
+          \node[anchor=west, text=usccardinal] at ($(M4)+(0.55,0)$) {M4};
+          \node[anchor=west, text=usccardinal] at ($(M5)+(0.15,0)$) {M5};
+          % supply rail
+          \draw (M3.S) -- ++(0,0.25) coordinate (v3) -- (v3 -| M4.S) -- (M4.S);
+          \draw ($(v3)!0.5!(v3 -| M4.S)$) -- ++(0,0.25) node[above] {$V_{DD}$};
+          % mirror: gates tied, M3 diode-connected
+          \draw (M3.G) -- (M4.G);
+          \draw (M3.D) -- ++(0,-0.25) coordinate (n1);
+          \draw ($(M3.G)!0.5!(M4.G)$) |- (n1);
+          \fill ($(M3.G)!0.5!(M4.G)$) circle (1.6pt);
+          \draw (n1) -- (M1.D);
+          % output branch
+          \draw (M4.D) -- (M2.D);
+          \draw ($(M4.D)!0.5!(M2.D)$) coordinate (out) to[short, *-o] ++(2.6,0) coordinate (vo) node[right] {$V_{out}$};
+          \draw ($(out)+(2.0,0)$) to[C, l=$C_L$, *-] ++(0,-1.6) node[ground] {};
+          % tail
+          \draw (M1.S) -- ++(0,-0.25) coordinate (t1) -- (t1 -| M2.S) -- (M2.S);
+          \draw (M5.D) -- ($(t1)!0.5!(t1 -| M2.S)$);
+          \fill ($(t1)!0.5!(t1 -| M2.S)$) circle (1.6pt);
+          \draw (M5.S) node[ground] {};
+          % ports
+          \draw (M1.G) to[short, -o] ++(-0.5,0) node[left] {$V_{in}^{+}$};
+          \draw (M2.G) to[short, -o] ++(0.5,0) node[below] {$V_{in}^{-}$};
+          \draw (M5.G) to[short, -o] ++(-0.5,0) node[left] {$V_b$};
+        \end{circuitikz}
+    \end{column}
+    \begin{column}{0.51\textwidth}
+      \centering
+      \textbf{\small The same circuit as a graph}\par\smallskip
+      \begin{tikzpicture}[x=1mm, y=1mm, scale=0.6, transform shape,
+          dev/.style={draw=usccardinal, fill=usccardinal!8, rounded corners=2pt, thick, font=\scriptsize,
+                      align=center, inner sep=1.5pt, minimum width=9mm},
+          net/.style={circle, fill=uscgray, inner sep=1.3pt},
+          netl/.style={font=\tiny, text=uscgray},
+          port/.style={font=\scriptsize, text=black},
+          e/.style={uscgray, thick}]
+        \node[net] (vdd)  at (30,46) {}; \node[port, above] at (vdd.north) {$V_{DD}$};
+        \node[dev] (m3)   at (14,37) {M3\\[-1pt]$W_{3,4}, L$};
+        \node[dev] (m4)   at (46,37) {M4\\[-1pt]$W_{3,4}, L$};
+        \node[net] (n1)   at (14,27) {}; \node[netl, left] at (n1.west) {mirror};
+        \node[net] (out)  at (46,27) {}; \node[port, above right] at (out.north east) {$V_{out}$};
+        \node[dev] (cl)   at (66,27) {$C_L$};
+        \node[dev] (m1)   at (14,17) {M1\\[-1pt]$W_{1,2}, L$};
+        \node[dev] (m2)   at (46,17) {M2\\[-1pt]$W_{1,2}, L$};
+        \node[net] (inp)  at (0,17)  {}; \node[port, above] at (inp.north) {$V_{in}^{+}$};
+        \node[net] (inm)  at (62,17) {}; \node[port, right] at (inm.east) {$V_{in}^{-}$};
+        \node[net] (tail) at (30,8)  {}; \node[netl, right] at (tail.east) {tail};
+        \node[dev] (m5)   at (30,0)  {M5\\[-1pt]$W_5, L$};
+        \node[net] (vb)   at (12,0)  {}; \node[port, left] at (vb.west) {$V_b$};
+        \node[net] (gnd)  at (56,-6) {}; \node[port, right] at (gnd.east) {ground};
+        \draw[e] (vdd) -- (m3); \draw[e] (vdd) -- (m4);
+        \draw[e] (m3) -- (n1); \draw[e] (m4) -- (n1); \draw[e] (m1) -- (n1);
+        \draw[e] (m4) -- (out); \draw[e] (m2) -- (out); \draw[e] (cl) -- (out);
+        \draw[e] (inp) -- (m1); \draw[e] (inm) -- (m2);
+        \draw[e] (m1) -- (tail); \draw[e] (m2) -- (tail); \draw[e] (m5) -- (tail);
+        \draw[e] (vb) -- (m5); \draw[e] (m5) -- (gnd); \draw[e] (cl) -- (gnd);
+      \end{tikzpicture}
 
-\begin{frame}{One environment for every explorer}
-  \begin{itemize}
-    \item \todo{candidates offered per step, budgets, the belief (per-check GP), the measures}
-    \item \todo{training on stored pools; validation and test on live simulation}
+      \smallskip
+      \begin{minipage}{\linewidth}\scriptsize\raggedright
+        \textbf{Nodes:} devices with their parameters; grey dots are nets. \textbf{Edges:} the terminals each net
+        joins. \textbf{Knobs}, set by a sizing: $W_{1,2}$, $W_{3,4}$, $W_5$, $L$, $V_b$. \textbf{Spec}, e.g.: gain
+        $\ge$ 40\,dB, bandwidth $\ge$ 10\,MHz, power $\le$ 100\,\textmu W at $C_L$ = 1\,pF.
+      \end{minipage}
+    \end{column}
+  \end{columns}
+
+  \vspace{1mm}
+  {\footnotesize\color{uscgray} Our learners see the map over the knobs, not this graph; the LLM designer edits the
+  graph.}
+\end{frame}
+
+% 3 -----------------------------------------------------------------------------------------------------------------
+\begin{frame}{The problem: map the region, not one design}
+  \begin{columns}[T]
+    \begin{column}{0.5\textwidth}
+      \small
+      \textbf{Sizing an op amp}
+      \begin{itemize}
+        \item A \alert{sizing} sets device dimensions, bias and supply for a chosen topology.
+        \item Each sizing costs one SPICE simulation, and few pass: 0.5--3\% of the space in our tasks.
+        \item Most methods, RL sizing included, return \alert{one} passing design.
+        \item Exhaustive maps do not scale: 5 knobs at 7 levels is 16,807 simulations; 8 knobs, 5.8 million.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.47\textwidth}
+      \small
+      \textbf{Why the feasible region}, every sizing that passes:
+      \begin{itemize}
+        \item \textbf{how safely} a spec is met;
+        \item \textbf{when to stop}: no sizing of this topology works;
+        \item \textbf{what to change}: which target limits it;
+        \item \textbf{what carries over} when the spec is revised.
+      \end{itemize}
+      \vspace{1mm}
+      \begin{block}{Goal}
+        An accurate map from a few hundred simulations.
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% 4 -----------------------------------------------------------------------------------------------------------------
+\begin{frame}{Our approach: learn where to simulate next}
+  \centering
+  \begin{tikzpicture}
+    \node[introBox] (b)  at (0,0)        {\textbf{Belief}\\ one GP per check};
+    \node[introBox] (c)  at (36mm,0)     {\textbf{Candidates}\\ 32 per knob};
+    \node[introBox] (p)  at (72mm,0)     {\textbf{Policy}\\ scores each one};
+    \node[introSim] (s)  at (72mm,-19mm) {\textbf{Simulate}\\ the chosen design};
+    \node[introBox] (m)  at (0,-19mm)    {\textbf{Map}\\ $p(x)$: chance $x$ passes};
+    \draw[introArr] (b) -- (c); \draw[introArr] (c) -- (p); \draw[introArr] (p) -- (s);
+    \draw[introArr] (s) -- node[below, font=\scriptsize] {update} (m);
+    \draw[introArr] (m) -- (b);
+  \end{tikzpicture}
+
+  \vspace{3mm}
+  \begin{itemize}\small
+    \item A \alert{learned acquisition function}: one RL policy, trained across many circuits, picks the next design to
+      simulate so that the map gets accurate fast.
+    \item The learners train in the \alert{same} environment: ES (Taman), PPO (Samir), DQN (Hungyu); Zhaoyan
+      post-trains a small LLM that chooses circuits.
+    \item Milestone 1 scored \emph{finding} one passing design, which was close to saturated; the final project
+      scores \alert{mapping}.
   \end{itemize}
 \end{frame}
 
-\begin{frame}{Baselines and measures}
-  \begin{itemize}
-    \item \rulename{}, greedy, random picks
-    \item \passfail{} and \prederr{}, with 95\% intervals over tasks
-  \end{itemize}
+% 5 -----------------------------------------------------------------------------------------------------------------
+\begin{frame}{The benchmark}
+  \begin{columns}[T]
+    \begin{column}{0.5\textwidth}
+      \small
+      \begin{itemize}
+        \item SkyWater 130\,nm with ngspice 41, pinned; GF\,180 for transfer.
+        \item 24 amplifier circuits. Each has a pool of 4,096--16,384 sizings, \alert{every one simulated}:
+          \begin{itemize}
+            \item explorers pick from the \emph{candidate} half;
+            \item maps are scored on the \emph{scoring} half.
+          \end{itemize}
+        \item Hard specs only: medium, thin, impossible.
+        \item A \alert{knob ladder}: one amplifier at 8, 15, 22, 29 knobs.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.47\textwidth}
+      \centering\small
+      \begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.74\linewidth}r@{}}
+        \toprule
+        Task set \texttt{map1} & Tasks \\
+        \midrule
+        Training: 12 circuits of 6--8 knobs, 1 of 15 & 97 \\
+        Validation: 3 circuits, the 15-knob rung & 27 \\
+        Test: 7 circuits, the ladder at 8, 22, 29 & 69 \\
+        \midrule
+        GF\,180: 3 circuits & 23 \\
+        \bottomrule
+      \end{tabular}
+
+      \vspace{2mm}
+      \footnotesize Training replays stored pools; validation is also run live, every pick simulated.
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% 6 -----------------------------------------------------------------------------------------------------------------
+\begin{frame}{One environment for every learner}
+  \begin{columns}[T]
+    \begin{column}{0.53\textwidth}
+      \small
+      \begin{itemize}
+        \item \textbf{Episode:} one task (circuit, spec, load), 50--600 simulations.
+        \item \textbf{Action:} pick 1 of 32 candidates per knob.
+        \item \textbf{Observation:} the belief at each candidate: chance, margins, uncertainty, distances, budget left.
+        \item \textbf{Policy:} one small network scores every candidate, so the same weights run on any circuit.
+        \item \textbf{Reward:} the drop in the map's \prederr{} over 1,024 reference designs.
+        \item \textbf{Same for all:} tasks, budgets, seeds; $10^6$ steps $\times$ 3 seeds.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.44\textwidth}
+      \small
+      \textbf{Measures}, one shared map estimator for every method:
+      \begin{itemize}
+        \item \prederr{} (lower is better): the headline;
+        \item \passfail{} (higher is better): the guard.
+      \end{itemize}
+      \vspace{1mm}
+      \textbf{The bar:} the \rulename{} (pick the highest $p(1-p)$). On validation, 600 simulations:
+      \vspace{1mm}
+
+      \centering
+      \begin{tabular}{@{}lc@{}}
+        \toprule
+        \prederr{} & 0.117 \\
+        \passfail{} & 0.674 \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% 7 -----------------------------------------------------------------------------------------------------------------
+\begin{frame}{What other work does, and what we add}
+  \centering\scriptsize\setlength{\tabcolsep}{4pt}\renewcommand{\arraystretch}{1.1}
+  \begin{tabular}{@{}L{0.29\textwidth}L{0.17\textwidth}L{0.25\textwidth}L{0.23\textwidth}@{}}
+    \toprule
+    Work & Returns & What is learned & Across circuits \\
+    \midrule
+    \textbf{RL sizing:} AutoCkt, PPAAS, GCN-RL & one design per spec & a policy that moves the sizes & per topology
+      (GCN-RL: across nodes) \\
+    \textbf{Pass/fail classifiers:} SVM, Bayesian NN & the boundary & a classifier, per circuit & no \\
+    \textbf{Level-set rules:} straddle, LSE & the region & nothing: a fixed rule & -- \\
+    \textbf{MetaBO} & the optimum & an acquisition function across tasks & yes, not circuits \\
+    \textbf{LLM designers:} AnalogCoder, ADO-LLM, EEsizer & a circuit or a sizing & prompting, in-context & -- \\
+    \midrule
+    \alert{\textbf{Ours}} & \alert{the feasible region} & \alert{an acquisition function for mapping} & \alert{any circuit,
+      knob count and spec; GF\,180 zero-shot} \\
+    \bottomrule
+  \end{tabular}
+
+  \vspace{1mm}
+  \begin{minipage}{\linewidth}\tiny\color{uscgray}\raggedright
+    AutoCkt (DATE'20), PPAAS (2025), GCN-RL (DAC'20); SVM (DAC'03, TCAD'15), Bayesian NN (ISCAS'22); straddle
+    (NeurIPS'05), LSE (IJCAI'13); MetaBO (ICLR'20); AnalogCoder (AAAI'25), ADO-LLM (ICCAD'24), EEsizer (TCAS-I'25).
+  \end{minipage}
 \end{frame}

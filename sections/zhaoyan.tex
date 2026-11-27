@@ -1,0 +1,51 @@
+%% sections/zhaoyan.tex: Zhaoyan's slides (your part). OWNER: Zhaoyan. Only Zhaoyan edits this file.
+%% - Figures go in figures/zhaoyan/ and are included as \includegraphics[width=...]{zhaoyan/<file>}.
+%% - Need a macro of your own? Define it here with a zhaoyan prefix (\newcommand{\zhaoyanFoo}{...}), never in preamble.tex.
+%% - Build just your part: latexmk -pdf solo_zhaoyan.tex   (or compile solo_zhaoyan.tex in Overleaf).
+%% - Backup slides: put them at the end of this file as \begin{frame}[noframenumbering]{Backup: ...}.
+%% - The section's title and cover slide are set in main.tex; ask Renzhi to rename it.
+
+
+\begin{frame}{Post-training: method}
+  \begin{itemize}
+    \item \todo{what the method is, in one line}
+    \item \todo{what it sees (observation), what it picks (action), what it is rewarded for}
+    \item \todo{what is specific to your version}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Post-training: training setup}
+  \begin{columns}[T]
+    \begin{column}{0.5\textwidth}
+      \begin{itemize}
+        \item \todo{tasks, budgets, seeds}
+        \item \todo{steps / wall time}
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \centering
+      \placeholder[\linewidth]{training curve\\ (figures/zhaoyan/...)}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Post-training: results}
+  \centering
+  \begin{tabular}{lcc}
+    \toprule
+    method & \passfail{} (vs \rulename) & \prederr{} (vs \rulename) \\
+    \midrule
+    \todo{your model} & $+0.000$ & $+0.000$ \\
+    \bottomrule
+  \end{tabular}
+
+  \vspace{1em}
+  \todo{one sentence: what the numbers say}
+\end{frame}
+
+\begin{frame}{Post-training: takeaways}
+  \begin{itemize}
+    \item \todo{what worked}
+    \item \todo{what did not, and why}
+  \end{itemize}
+\end{frame}
