@@ -1,5 +1,5 @@
 %% sections/intro.tex: Renzhi's 4-minute part: the problem, the setup every learner trains in, related work.
-%% OWNER: Renzhi. Only Renzhi edits this file. Six slides in 4 minutes.
+%% OWNER: Renzhi. Only Renzhi edits this file. Seven slides in 4 minutes.
 %% Numbers: doc/final/final.tex and rl/PLAN.md (EE599-Project, 2026-11-26). Longer material: sections/renzhi.tex (backup).
 
 \tikzset{
@@ -39,6 +39,63 @@
 \end{frame}
 
 % 2 -----------------------------------------------------------------------------------------------------------------
+\begin{frame}{What a circuit looks like: a five-transistor OTA}
+  \begin{columns}[c]
+    \begin{column}{0.5\textwidth}
+      \centering
+        \begin{circuitikz}[scale=1.0, transform shape, font=\footnotesize]
+          \node[nmos] (M5) at (3,0) {};
+          \node[nmos] (M1) at (2,1.9) {};
+          \node[nmos, xscale=-1] (M2) at (4,1.9) {};
+          \node[pmos, xscale=-1] (M3) at (2,4) {};
+          \node[pmos] (M4) at (4,4) {};
+          % device labels (nodes) with parameters
+          \node[anchor=west, text=usccardinal] at ($(M1)+(0.15,0)$) {M1};
+          \node[anchor=east, text=usccardinal] at ($(M2)+(-0.15,0)$) {M2};
+          \node[anchor=east, text=usccardinal] at ($(M3)+(-0.55,0)$) {M3};
+          \node[anchor=west, text=usccardinal] at ($(M4)+(0.55,0)$) {M4};
+          \node[anchor=west, text=usccardinal] at ($(M5)+(0.15,0)$) {M5};
+          % supply rail
+          \draw (M3.S) -- ++(0,0.25) coordinate (v3) -- (v3 -| M4.S) -- (M4.S);
+          \draw ($(v3)!0.5!(v3 -| M4.S)$) -- ++(0,0.25) node[above] {$V_{DD}$};
+          % mirror: gates tied, M3 diode-connected
+          \draw (M3.G) -- (M4.G);
+          \draw (M3.D) -- ++(0,-0.25) coordinate (n1);
+          \draw ($(M3.G)!0.5!(M4.G)$) |- (n1);
+          \fill ($(M3.G)!0.5!(M4.G)$) circle (1.6pt);
+          \draw (n1) -- (M1.D);
+          % output branch
+          \draw (M4.D) -- (M2.D);
+          \draw ($(M4.D)!0.5!(M2.D)$) coordinate (out) to[short, *-o] ++(2.6,0) coordinate (vo) node[right] {$V_{out}$};
+          \draw ($(out)+(2.0,0)$) to[C, l=$C_L$, *-] ++(0,-1.6) node[ground] {};
+          % tail
+          \draw (M1.S) -- ++(0,-0.25) coordinate (t1) -- (t1 -| M2.S) -- (M2.S);
+          \draw (M5.D) -- ($(t1)!0.5!(t1 -| M2.S)$);
+          \fill ($(t1)!0.5!(t1 -| M2.S)$) circle (1.6pt);
+          \draw (M5.S) node[ground] {};
+          % ports
+          \draw (M1.G) to[short, -o] ++(-0.5,0) node[left] {$V_{in}^{+}$};
+          \draw (M2.G) to[short, -o] ++(0.5,0) node[below] {$V_{in}^{-}$};
+          \draw (M5.G) to[short, -o] ++(-0.5,0) node[left] {$V_b$};
+        \end{circuitikz}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \small
+      \begin{itemize}
+        \item \textbf{Ports:} inputs $V_{in}^{\pm}$, output $V_{out}$, supply $V_{DD}$ and ground, bias $V_b$.
+        \item \textbf{Devices} (the graph's nodes): M1--M5 and the load $C_L$, each with parameters: width $W$,
+          length $L$, value of $C$ or $R$.
+        \item \textbf{Nets} (its edges): which device terminals are wired together.
+        \item \textbf{Knobs:} the free parameters a sizing sets; matched pairs share one ($W_{1,2}$, $W_{3,4}$,
+          $W_5$, $L$, $V_b$).
+        \item \textbf{Spec:} e.g.\ gain $\ge$ 40\,dB, bandwidth $\ge$ 10\,MHz, power $\le$ 100\,\textmu W at
+          $C_L$ = 1\,pF, every MOSFET in saturation.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% 3 -----------------------------------------------------------------------------------------------------------------
 \begin{frame}{The problem: map the region, not one design}
   \begin{columns}[T]
     \begin{column}{0.5\textwidth}
@@ -68,7 +125,7 @@
   \end{columns}
 \end{frame}
 
-% 3 -----------------------------------------------------------------------------------------------------------------
+% 4 -----------------------------------------------------------------------------------------------------------------
 \begin{frame}{Our approach: learn where to simulate next}
   \centering
   \begin{tikzpicture}
@@ -93,7 +150,7 @@
   \end{itemize}
 \end{frame}
 
-% 4 -----------------------------------------------------------------------------------------------------------------
+% 5 -----------------------------------------------------------------------------------------------------------------
 \begin{frame}{The benchmark}
   \begin{columns}[T]
     \begin{column}{0.5\textwidth}
@@ -129,7 +186,7 @@
   \end{columns}
 \end{frame}
 
-% 5 -----------------------------------------------------------------------------------------------------------------
+% 6 -----------------------------------------------------------------------------------------------------------------
 \begin{frame}{One environment for every learner}
   \begin{columns}[T]
     \begin{column}{0.53\textwidth}
@@ -165,7 +222,7 @@
   \end{columns}
 \end{frame}
 
-% 6 -----------------------------------------------------------------------------------------------------------------
+% 7 -----------------------------------------------------------------------------------------------------------------
 \begin{frame}{What other work does, and what we add}
   \centering\scriptsize\setlength{\tabcolsep}{4pt}\renewcommand{\arraystretch}{1.1}
   \begin{tabular}{@{}L{0.29\textwidth}L{0.17\textwidth}L{0.25\textwidth}L{0.23\textwidth}@{}}
