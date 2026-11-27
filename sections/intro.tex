@@ -1,5 +1,5 @@
 %% sections/intro.tex: Renzhi's 4-minute part: the problem, the setup every learner trains in, related work.
-%% OWNER: Renzhi. Only Renzhi edits this file. Five slides, under a minute each.
+%% OWNER: Renzhi. Only Renzhi edits this file. Six slides in 4 minutes.
 %% Numbers: doc/final/final.tex and rl/PLAN.md (EE599-Project, 2026-11-26). Longer material: sections/renzhi.tex (backup).
 
 \tikzset{
@@ -10,15 +10,44 @@
 }
 
 % 1 -----------------------------------------------------------------------------------------------------------------
+\begin{frame}{Automated circuit design, and our scope}
+  \centering
+  \begin{tikzpicture}
+    \node[introSim, text width=18mm] (spec) at (0,0)     {\textbf{Spec}\\ gain, bandwidth, power, load};
+    \node[introBox] (top)  at (32mm,0)    {\textbf{Propose}\\ a topology};
+    \node[introBox] (size) at (64mm,0)    {\textbf{Size}\\ the devices};
+    \node[introBox] (eval) at (96mm,0)    {\textbf{Evaluate}\\ in SPICE};
+    \draw[introArr] (spec) -- (top); \draw[introArr] (top) -- (size); \draw[introArr] (size) -- (eval);
+    \draw[introArr, usccardinal] (eval.south) -- ++(0,-6mm) -| node[below, pos=0.25, font=\scriptsize]
+      {revise the sizing} (size.south);
+    \draw[introArr, usccardinal] (eval.north) -- ++(0,6mm) -| node[above, pos=0.25, font=\scriptsize]
+      {or the topology} (top.north);
+    \draw[usccardinal, very thick, dashed, rounded corners=3pt]
+      ($(size.south west)+(-2.5mm,-12.5mm)$) rectangle ($(eval.north east)+(2.5mm,2.5mm)$);
+    \node[font=\scriptsize\bfseries, text=usccardinal, anchor=north] at ($(size.south)!0.5!(eval.south)+(0,-13.5mm)$)
+      {our focus: learn to map the feasible region};
+    \node[font=\scriptsize, text=uscgray, anchor=north] at ($(top.south)+(0,-13.5mm)$) {the LLM part};
+  \end{tikzpicture}
+
+  \vspace{4mm}
+  \begin{itemize}\small
+    \item A full workflow proposes a topology, sizes it, evaluates it, and revises; each step is open, and most of
+      the cost is in simulation.
+    \item \textbf{Scope: operational amplifiers} and the stages they are built from (single-stage OTAs, cascodes,
+      two-stage Miller). They are in almost every analog system, and their specs are standard and easy to check.
+  \end{itemize}
+\end{frame}
+
+% 2 -----------------------------------------------------------------------------------------------------------------
 \begin{frame}{The problem: map the region, not one design}
   \begin{columns}[T]
     \begin{column}{0.5\textwidth}
       \small
-      \textbf{Sizing an amplifier}
+      \textbf{Sizing an op amp}
       \begin{itemize}
-        \item A spec (gain, bandwidth, power, load) needs a \alert{topology}, then a \alert{sizing}: device
-          dimensions, bias, supply.
+        \item A \alert{sizing} sets device dimensions, bias and supply for a chosen topology.
         \item Each sizing costs one SPICE simulation, and few pass: 0.5--3\% of the space in our tasks.
+        \item Most methods, RL sizing included, return \alert{one} passing design.
         \item Exhaustive maps do not scale: 5 knobs at 7 levels is 16,807 simulations; 8 knobs, 5.8 million.
       \end{itemize}
     \end{column}
@@ -26,7 +55,7 @@
       \small
       \textbf{Why the feasible region}, every sizing that passes:
       \begin{itemize}
-        \item \textbf{how safely} a spec is met (inside, not on the edge);
+        \item \textbf{how safely} a spec is met;
         \item \textbf{when to stop}: no sizing of this topology works;
         \item \textbf{what to change}: which target limits it;
         \item \textbf{what carries over} when the spec is revised.
@@ -39,7 +68,7 @@
   \end{columns}
 \end{frame}
 
-% 2 -----------------------------------------------------------------------------------------------------------------
+% 3 -----------------------------------------------------------------------------------------------------------------
 \begin{frame}{Our approach: learn where to simulate next}
   \centering
   \begin{tikzpicture}
@@ -64,7 +93,7 @@
   \end{itemize}
 \end{frame}
 
-% 3 -----------------------------------------------------------------------------------------------------------------
+% 4 -----------------------------------------------------------------------------------------------------------------
 \begin{frame}{The benchmark}
   \begin{columns}[T]
     \begin{column}{0.5\textwidth}
@@ -100,7 +129,7 @@
   \end{columns}
 \end{frame}
 
-% 4 -----------------------------------------------------------------------------------------------------------------
+% 5 -----------------------------------------------------------------------------------------------------------------
 \begin{frame}{One environment for every learner}
   \begin{columns}[T]
     \begin{column}{0.53\textwidth}
@@ -136,7 +165,7 @@
   \end{columns}
 \end{frame}
 
-% 5 -----------------------------------------------------------------------------------------------------------------
+% 6 -----------------------------------------------------------------------------------------------------------------
 \begin{frame}{What other work does, and what we add}
   \centering\scriptsize\setlength{\tabcolsep}{4pt}\renewcommand{\arraystretch}{1.1}
   \begin{tabular}{@{}L{0.29\textwidth}L{0.17\textwidth}L{0.25\textwidth}L{0.23\textwidth}@{}}
