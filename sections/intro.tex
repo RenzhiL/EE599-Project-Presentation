@@ -41,9 +41,10 @@
 % 2 -----------------------------------------------------------------------------------------------------------------
 \begin{frame}{What a circuit looks like: a five-transistor OTA}
   \begin{columns}[c]
-    \begin{column}{0.5\textwidth}
+    \begin{column}{0.47\textwidth}
       \centering
-        \begin{circuitikz}[scale=1.0, transform shape, font=\footnotesize]
+      \textbf{\small Schematic}\par\smallskip
+      \begin{circuitikz}[scale=0.8, transform shape, font=\footnotesize]
           \node[nmos] (M5) at (3,0) {};
           \node[nmos] (M1) at (2,1.9) {};
           \node[nmos, xscale=-1] (M2) at (4,1.9) {};
@@ -79,20 +80,50 @@
           \draw (M5.G) to[short, -o] ++(-0.5,0) node[left] {$V_b$};
         \end{circuitikz}
     \end{column}
-    \begin{column}{0.48\textwidth}
-      \small
-      \begin{itemize}
-        \item \textbf{Ports:} inputs $V_{in}^{\pm}$, output $V_{out}$, supply $V_{DD}$ and ground, bias $V_b$.
-        \item \textbf{Devices} (the graph's nodes): M1--M5 and the load $C_L$, each with parameters: width $W$,
-          length $L$, value of $C$ or $R$.
-        \item \textbf{Nets} (its edges): which device terminals are wired together.
-        \item \textbf{Knobs:} the free parameters a sizing sets; matched pairs share one ($W_{1,2}$, $W_{3,4}$,
-          $W_5$, $L$, $V_b$).
-        \item \textbf{Spec:} e.g.\ gain $\ge$ 40\,dB, bandwidth $\ge$ 10\,MHz, power $\le$ 100\,\textmu W at
-          $C_L$ = 1\,pF, every MOSFET in saturation.
-      \end{itemize}
+    \begin{column}{0.51\textwidth}
+      \centering
+      \textbf{\small The same circuit as a graph}\par\smallskip
+      \begin{tikzpicture}[x=1mm, y=1mm, scale=0.6, transform shape,
+          dev/.style={draw=usccardinal, fill=usccardinal!8, rounded corners=2pt, thick, font=\scriptsize,
+                      align=center, inner sep=1.5pt, minimum width=9mm},
+          net/.style={circle, fill=uscgray, inner sep=1.3pt},
+          netl/.style={font=\tiny, text=uscgray},
+          port/.style={font=\scriptsize, text=black},
+          e/.style={uscgray, thick}]
+        \node[net] (vdd)  at (30,46) {}; \node[port, above] at (vdd.north) {$V_{DD}$};
+        \node[dev] (m3)   at (14,37) {M3\\[-1pt]$W_{3,4}, L$};
+        \node[dev] (m4)   at (46,37) {M4\\[-1pt]$W_{3,4}, L$};
+        \node[net] (n1)   at (14,27) {}; \node[netl, left] at (n1.west) {mirror};
+        \node[net] (out)  at (46,27) {}; \node[port, above right] at (out.north east) {$V_{out}$};
+        \node[dev] (cl)   at (66,27) {$C_L$};
+        \node[dev] (m1)   at (14,17) {M1\\[-1pt]$W_{1,2}, L$};
+        \node[dev] (m2)   at (46,17) {M2\\[-1pt]$W_{1,2}, L$};
+        \node[net] (inp)  at (0,17)  {}; \node[port, above] at (inp.north) {$V_{in}^{+}$};
+        \node[net] (inm)  at (62,17) {}; \node[port, right] at (inm.east) {$V_{in}^{-}$};
+        \node[net] (tail) at (30,8)  {}; \node[netl, right] at (tail.east) {tail};
+        \node[dev] (m5)   at (30,0)  {M5\\[-1pt]$W_5, L$};
+        \node[net] (vb)   at (12,0)  {}; \node[port, left] at (vb.west) {$V_b$};
+        \node[net] (gnd)  at (56,-6) {}; \node[port, right] at (gnd.east) {ground};
+        \draw[e] (vdd) -- (m3); \draw[e] (vdd) -- (m4);
+        \draw[e] (m3) -- (n1); \draw[e] (m4) -- (n1); \draw[e] (m1) -- (n1);
+        \draw[e] (m4) -- (out); \draw[e] (m2) -- (out); \draw[e] (cl) -- (out);
+        \draw[e] (inp) -- (m1); \draw[e] (inm) -- (m2);
+        \draw[e] (m1) -- (tail); \draw[e] (m2) -- (tail); \draw[e] (m5) -- (tail);
+        \draw[e] (vb) -- (m5); \draw[e] (m5) -- (gnd); \draw[e] (cl) -- (gnd);
+      \end{tikzpicture}
+
+      \smallskip
+      \begin{minipage}{\linewidth}\scriptsize\raggedright
+        \textbf{Nodes:} devices with their parameters; grey dots are nets. \textbf{Edges:} the terminals each net
+        joins. \textbf{Knobs}, set by a sizing: $W_{1,2}$, $W_{3,4}$, $W_5$, $L$, $V_b$. \textbf{Spec}, e.g.: gain
+        $\ge$ 40\,dB, bandwidth $\ge$ 10\,MHz, power $\le$ 100\,\textmu W at $C_L$ = 1\,pF.
+      \end{minipage}
     \end{column}
   \end{columns}
+
+  \vspace{1mm}
+  {\footnotesize\color{uscgray} Our learners see the map over the knobs, not this graph; the LLM designer edits the
+  graph.}
 \end{frame}
 
 % 3 -----------------------------------------------------------------------------------------------------------------
