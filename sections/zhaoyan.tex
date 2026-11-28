@@ -1,51 +1,126 @@
-%% sections/zhaoyan.tex: Zhaoyan's slides (your part). OWNER: Zhaoyan. Only Zhaoyan edits this file.
+%% sections/zhaoyan.tex: Zhaoyan's slides (post-training Qwen3-8B for catalogue decisions). OWNER: Zhaoyan.
+%% Only Zhaoyan edits this file. Drafted by Renzhi on 2026-11-27 from Zhaoyan's report section (final report,
+%% "Post-training Qwen3-8B for catalogue decisions", branch doc/qwen-posttrain-results); every number is from there.
 %% - Figures go in figures/zhaoyan/ and are included as \includegraphics[width=...]{zhaoyan/<file>}.
 %% - Need a macro of your own? Define it here with a zhaoyan prefix (\newcommand{\zhaoyanFoo}{...}), never in preamble.tex.
 %% - Build just your part: latexmk -pdf solo_zhaoyan.tex   (or compile solo_zhaoyan.tex in Overleaf).
 %% - Backup slides: put them at the end of this file as \begin{frame}[noframenumbering]{Backup: ...}.
 %% - The section's title and cover slide are set in main.tex; ask Renzhi to rename it.
 
+\tikzset{
+  zhaoyanBox/.style={draw=usccardinal, fill=usccardinal!6, rounded corners=2pt, thick, align=center,
+                     font=\footnotesize, text width=24mm, minimum height=11mm, inner sep=2pt},
+  zhaoyanSim/.style={zhaoyanBox, draw=uscgray, fill=uscgray!8},
+  zhaoyanArr/.style={-{Stealth[length=2mm]}, thick, uscgray},
+}
 
-\begin{frame}{Post-training: method}
-  \begin{itemize}
-    \item \todo{what the method is, in one line}
-    \item \todo{what it sees (observation), what it picks (action), what it is rewarded for}
-    \item \todo{what is specific to your version}
+\begin{frame}{The task: a small model that picks circuits}
+  \centering
+  \begin{tikzpicture}
+    \node[zhaoyanSim] (in)  at (0,0)      {\textbf{Spec}\\ catalogue, history};
+    \node[zhaoyanBox] (llm) at (34mm,0)   {\textbf{Qwen3-8B}\\ proposes 3 circuits};
+    \node[zhaoyanSim] (srch) at (68mm,0)  {\textbf{Search} each:\\ 128, then up to 200 more};
+    \node[zhaoyanBox] (dec) at (102mm,0)  {\textbf{Decide}\\ accept, retry, reject};
+    \draw[zhaoyanArr] (in) -- (llm); \draw[zhaoyanArr] (llm) -- (srch); \draw[zhaoyanArr] (srch) -- (dec);
+    \draw[zhaoyanArr, usccardinal] (dec.south) -- ++(0,-6mm) -| node[below, pos=0.25, font=\scriptsize]
+      {another round (at most 3), with the measured results} (llm.south);
+  \end{tikzpicture}
+
+  \vspace{6mm}
+  \begin{itemize}\small
+    \item The outer loop of the designer: given a spec, choose which \alert{existing catalogue circuits} to try, read
+      the search results, and decide when to stop.
+    \item The search replays stored SKY130 designs: no new simulation.
+    \item An accept counts only with a verified design that meets the spec.
   \end{itemize}
 \end{frame}
 
-\begin{frame}{Post-training: training setup}
+\begin{frame}{Data and training}
   \begin{columns}[T]
-    \begin{column}{0.5\textwidth}
+    \begin{column}{0.48\textwidth}
+      \textbf{Data, from stored searches}
+      \small
       \begin{itemize}
-        \item \todo{tasks, budgets, seeds}
-        \item \todo{steps / wall time}
+        \item 6,000 successful sessions replayed from 478 training tasks; no teacher model.
+        \item Successful sessions after 0, 1 or 2 failed rounds: 30\%, 50\%, 20\%.
+        \item Failed rounds and their results are context; the model learns the successful proposal and the accept
+          (11,977 examples).
       \end{itemize}
     \end{column}
-    \begin{column}{0.5\textwidth}
-      \centering
-      \placeholder[\linewidth]{training curve\\ (figures/zhaoyan/...)}
+    \begin{column}{0.48\textwidth}
+      \textbf{Two stages}
+      \small
+      \begin{enumerate}
+        \item \textbf{SFT:} LoRA (rank 32) on Qwen3-8B, 2 epochs.
+        \item \textbf{GRPO:} 578 tasks $\times$ 16 complete sessions each, compared within a task.\\[2pt]
+          Reward: $+1$ for a verified accept, $0$ for a reject, $-1$ for an unsupported accept or an exhausted
+          session, $-0.1$ per invalid reply (at most 2).
+      \end{enumerate}
+      \vspace{1mm}
+      \footnotesize Both checkpoints fixed before the test.
     \end{column}
   \end{columns}
 \end{frame}
 
-\begin{frame}{Post-training: results}
-  \centering
-  \begin{tabular}{lcc}
-    \toprule
-    method & \passfail{} (vs \rulename) & \prederr{} (vs \rulename) \\
-    \midrule
-    \todo{your model} & $+0.000$ & $+0.000$ \\
-    \bottomrule
-  \end{tabular}
-
-  \vspace{1em}
-  \todo{one sentence: what the numbers say}
+\begin{frame}{Results on the test split}
+  \begin{columns}[c]
+    \begin{column}{0.58\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{zhaoyan/qwen_test276_success.png}
+    \end{column}
+    \begin{column}{0.40\textwidth}
+      \footnotesize
+      276 test sessions (138 tasks $\times$ 2 seeds). Correct: a verified accept when the catalogue holds a solution
+      (240), a reject when it does not (36).
+      \small
+      \begin{itemize}
+        \item Untrained, format enforced: 74.6\%.
+        \item SFT + GRPO: \alert{83.3\%}, +8.7 points (95\% interval 2.2 to 15.2).
+        \item Rule designer: \alert{87.7\%}; GRPO is 4.3 points below ($-8.7$ to $-0.4$).
+      \end{itemize}
+    \end{column}
+  \end{columns}
 \end{frame}
 
-\begin{frame}{Post-training: takeaways}
+\begin{frame}{What each stage teaches}
+  \begin{columns}[c]
+    \begin{column}{0.53\textwidth}
+      \centering\footnotesize
+      \begin{tabular}{@{}lccc@{}}
+        \toprule
+        276 sessions & Base & SFT & +\,GRPO \\
+        \midrule
+        Verified accepts (of 240) & 171 & 196 & 194 \\
+        Correct rejects (of 36) & 35 & \alert{1} & 36 \\
+        Invalid replies & 27 & \alert{150} & 0 \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+    \begin{column}{0.45\textwidth}
+      \small
+      \begin{itemize}
+        \item \textbf{SFT finds more solutions} (171 $\to$ 196) but stops wrongly: after the last round it keeps
+          proposing, so it rejects only 1 of the 36 sessions with no solution. Its examples all end in an accept.
+        \item \textbf{GRPO fixes the stopping:} all 36 rejects right, no invalid replies, and 194 of SFT's 196
+          solutions kept.
+        \item Over SFT, GRPO gains by stopping correctly, not by finding more.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Takeaways}
   \begin{itemize}
-    \item \todo{what worked}
-    \item \todo{what did not, and why}
+    \item SFT teaches the model to find solutions; GRPO teaches it when to stop. Only the two together beat the
+      untrained model: +8.7 points.
+    \item It still does not beat the fixed rule designer (83.3\% against 87.7\%): as for the RL methods, a simple
+      rule is the bar.
+    \item Compensated (two-stage) circuits: SFT and GRPO accept none, so their stability is not tested.
+    \item \textbf{Next:} training data that ends at the round limit and with justified rejects; rewards for verified
+      progress and checked stability; then connecting the model to the compiler and simulator and testing on new
+      circuit families.
   \end{itemize}
+  \vspace{2mm}
+  {\footnotesize\color{uscgray} Adapter: \texttt{JzyRay/Qwen3-8B-EE599-SFT2-GRPO578} (Hugging Face); code in
+  \texttt{llm/experiments/qwen\_posttrain/}.}
 \end{frame}
